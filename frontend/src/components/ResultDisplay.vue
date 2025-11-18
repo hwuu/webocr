@@ -3,10 +3,12 @@
     <div v-if="hasResult" class="result-container">
       <div class="result-header">
         <span class="title">识别结果</span>
-        <el-button type="primary" size="small" @click="handleCopy">
-          <el-icon><CopyDocument /></el-icon>
-          复制文本
-        </el-button>
+        <div class="button-group">
+          <el-button type="primary" @click="handleCopy">
+            复制到剪贴板
+          </el-button>
+          <el-button type="danger" @click="handleClear">清除</el-button>
+        </div>
       </div>
 
       <el-tabs v-model="activeTab" class="result-tabs">
@@ -16,8 +18,8 @@
             <el-input
               v-model="result.plain_text"
               type="textarea"
-              :rows="20"
               readonly
+              resize="none"
               placeholder="识别结果将显示在这里..."
             />
           </div>
@@ -31,6 +33,8 @@
               stripe
               style="width: 100%"
               max-height="500"
+              @cell-mouse-enter="handleCellHover"
+              @cell-mouse-leave="handleCellLeave"
             >
               <el-table-column type="index" label="序号" width="60" />
               <el-table-column prop="text" label="文本内容" min-width="200" />
@@ -60,6 +64,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { CopyDocument } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
 import { copyToClipboard } from '@/utils/clipboard'
 
 const props = defineProps({
@@ -77,6 +82,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['clear', 'highlight'])
+
 const activeTab = ref('plain')
 
 /**
@@ -87,10 +94,56 @@ const hasResult = computed(() => {
 })
 
 /**
- * 复制纯文本
+ * 复制内容到剪贴板
  */
 const handleCopy = () => {
-  copyToClipboard(props.result.plain_text)
+  if (activeTab.value === 'plain') {
+    // 纯文本页签：复制纯文本
+    copyToClipboard(props.result.plain_text)
+  } else {
+    // 完整结果页签：复制 JSON
+    const jsonData = JSON.stringify(props.result.detailed, null, 2)
+    copyToClipboard(jsonData)
+  }
+}
+
+/**
+ * 清除图片和结果
+ */
+const handleClear = async () => {
+  const promise = ElMessageBox.confirm(
+    '确定要清除当前图片和识别结果吗？',
+    '确认清除',
+    {
+      distinguishCancelAndClose: true,
+      confirmButtonText: '是',
+      cancelButtonText: '否',
+      confirmButtonClass: 'confirm-button-danger',
+      cancelButtonClass: 'cancel-button-primary',
+      type: 'warning',
+      showClose: false,
+      lockScroll: true
+    }
+  )
+
+  // 延迟设置焦点，确保对话框完全渲染
+  const setFocus = () => {
+    const cancelButton = document.querySelector('.cancel-button-primary')
+    if (cancelButton) {
+      cancelButton.focus()
+    } else {
+      // 如果还没找到，再等待一会
+      setTimeout(setFocus, 50)
+    }
+  }
+  setTimeout(setFocus, 150)
+
+  try {
+    await promise
+    emit('clear')
+  } catch {
+    // 用户取消，不做任何操作
+  }
 }
 
 /**
@@ -100,6 +153,21 @@ const getConfidenceType = (confidence) => {
   if (confidence >= 0.9) return 'success'
   if (confidence >= 0.7) return 'warning'
   return 'danger'
+}
+
+/**
+ * 单元格鼠标进入
+ */
+const handleCellHover = (row) => {
+  const index = props.result.detailed.indexOf(row)
+  emit('highlight', index)
+}
+
+/**
+ * 单元格鼠标离开
+ */
+const handleCellLeave = () => {
+  emit('highlight', -1)
 }
 </script>
 
@@ -132,6 +200,36 @@ const getConfidenceType = (confidence) => {
   color: #303133;
 }
 
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+/* 自定义确认对话框按钮样式 */
+:global(.confirm-button-danger) {
+  background-color: #f56c6c !important;
+  border-color: #f56c6c !important;
+  color: #fff !important;
+}
+
+:global(.confirm-button-danger:hover),
+:global(.confirm-button-danger:focus) {
+  background-color: #f78989 !important;
+  border-color: #f78989 !important;
+}
+
+:global(.cancel-button-primary) {
+  background-color: #409eff !important;
+  border-color: #409eff !important;
+  color: #fff !important;
+}
+
+:global(.cancel-button-primary:hover),
+:global(.cancel-button-primary:focus) {
+  background-color: #66b1ff !important;
+  border-color: #66b1ff !important;
+}
+
 .result-tabs {
   flex: 1;
   display: flex;
@@ -141,18 +239,56 @@ const getConfidenceType = (confidence) => {
 
 :deep(.el-tabs__content) {
   flex: 1;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.plain-text-content,
-.detailed-content {
+:deep(.el-tab-pane) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.plain-text-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 16px 0;
+  overflow: hidden;
 }
 
-:deep(.el-textarea__inner) {
+.plain-text-content :deep(.el-textarea) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.plain-text-content :deep(.el-textarea__inner) {
+  height: 100%;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
   line-height: 1.6;
+  resize: none !important;
+  cursor: default;
+  overflow-y: auto;
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.plain-text-content :deep(.el-textarea__inner:focus) {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.detailed-content {
+  padding: 16px 0;
 }
 
 .loading-container {

@@ -1,24 +1,21 @@
 <template>
   <div id="app">
-    <div class="app-header">
-      <h1 class="app-title">Web OCR - 图片文字识别</h1>
-    </div>
-
     <div class="app-container">
-      <!-- 上传区域（顶部） -->
-      <div class="upload-section">
-        <UploadArea @upload="handleUpload" />
+      <!-- 上传视图（初始状态 - 全屏） -->
+      <div v-if="!hasImage" class="upload-view">
+        <UploadArea @upload="handleFileSelected" />
       </div>
 
-      <!-- 主内容区域（左右布局） -->
-      <div class="main-section">
+      <!-- 识别视图（选择图片后 - 左右布局） -->
+      <div v-else class="main-section">
         <!-- 左侧：图片预览 -->
         <div class="left-panel">
           <ImagePreview
             :image-url="imageUrl"
             :file-name="fileName"
             :file-size="fileSize"
-            @clear="handleClear"
+            :ocr-result="ocrResult"
+            :highlight-index="highlightIndex"
           />
         </div>
 
@@ -28,15 +25,45 @@
             :result="ocrResult"
             :loading="loading"
             :loading-text="loadingText"
+            @clear="handleClear"
+            @highlight="handleHighlight"
           />
         </div>
       </div>
     </div>
+
+    <!-- 确认对话框 -->
+    <el-dialog
+      v-model="showConfirmDialog"
+      title="确认识别"
+      width="60%"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      @open="handleDialogOpen"
+    >
+      <div class="confirm-dialog-content">
+        <div class="preview-image-container">
+          <img :src="previewImageUrl" alt="预览图片" />
+        </div>
+        <div class="file-info">
+          <p><strong>文件名：</strong>{{ previewFileName }}</p>
+          <p><strong>大小：</strong>{{ previewFileSize }}</p>
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCancel">取消</el-button>
+          <el-button type="primary" @click="handleConfirm" autofocus>
+            开始识别
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import UploadArea from './components/UploadArea.vue'
 import ImagePreview from './components/ImagePreview.vue'
@@ -49,36 +76,101 @@ const imageUrl = ref('')
 const fileName = ref('')
 const fileSize = ref(0)
 
+// 预览对话框状态
+const showConfirmDialog = ref(false)
+const previewImageUrl = ref('')
+const previewFileName = ref('')
+const previewFileSize = ref('')
+const pendingFile = ref(null)
+
 // OCR 结果和加载状态
 const ocrResult = ref({ plain_text: '', detailed: [] })
 const loading = ref(false)
 const loadingText = ref('正在识别中，请稍候...')
 
-/**
- * 处理文件上传
- */
-const handleUpload = async (file) => {
-  try {
-    // 1. 显示图片预览
-    imageUrl.value = URL.createObjectURL(file)
-    fileName.value = file.name
-    fileSize.value = file.size
+// 高亮索引（用于边界框高亮）
+const highlightIndex = ref(-1)
 
-    // 2. 清空之前的结果
+// 是否已选择图片
+const hasImage = computed(() => !!imageUrl.value)
+
+/**
+ * 格式化文件大小
+ */
+const formatFileSize = (size) => {
+  if (!size) return '-'
+  const kb = size / 1024
+  if (kb < 1024) {
+    return `${kb.toFixed(2)} KB`
+  }
+  const mb = kb / 1024
+  return `${mb.toFixed(2)} MB`
+}
+
+/**
+ * 处理文件选择（显示确认对话框）
+ */
+const handleFileSelected = (file) => {
+  pendingFile.value = file
+  previewImageUrl.value = URL.createObjectURL(file)
+  previewFileName.value = file.name
+  previewFileSize.value = formatFileSize(file.size)
+  showConfirmDialog.value = true
+}
+
+/**
+ * 对话框打开后，聚焦到确认按钮
+ */
+const handleDialogOpen = () => {
+  // Element Plus 会自动处理 autofocus
+}
+
+/**
+ * 取消识别
+ */
+const handleCancel = () => {
+  showConfirmDialog.value = false
+  // 释放预览 URL
+  if (previewImageUrl.value) {
+    URL.revokeObjectURL(previewImageUrl.value)
+  }
+  previewImageUrl.value = ''
+  previewFileName.value = ''
+  previewFileSize.value = ''
+  pendingFile.value = null
+}
+
+/**
+ * 确认识别
+ */
+const handleConfirm = async () => {
+  const file = pendingFile.value
+  if (!file) return
+
+  // 关闭对话框
+  showConfirmDialog.value = false
+
+  // 设置图片信息（显示识别视图）
+  imageUrl.value = previewImageUrl.value
+  fileName.value = previewFileName.value
+  fileSize.value = file.size
+
+  try {
+    // 清空之前的结果
     ocrResult.value = { plain_text: '', detailed: [] }
 
-    // 3. 转为 Base64
+    // 转为 Base64
     loading.value = true
     loadingText.value = '正在准备图片...'
 
     const base64 = await fileToBase64(file)
 
-    // 4. 调用 OCR API
+    // 调用 OCR API
     loadingText.value = '正在识别中，请稍候...'
 
     const result = await ocrRecognize(base64)
 
-    // 5. 显示结果
+    // 显示结果
     ocrResult.value = result
     loading.value = false
 
@@ -94,7 +186,7 @@ const handleUpload = async (file) => {
 }
 
 /**
- * 清除图片和结果
+ * 清除图片和结果（返回上传视图）
  */
 const handleClear = () => {
   // 释放对象 URL
@@ -107,8 +199,16 @@ const handleClear = () => {
   fileSize.value = 0
   ocrResult.value = { plain_text: '', detailed: [] }
   loading.value = false
+  highlightIndex.value = -1
 
   ElMessage.info('已清除')
+}
+
+/**
+ * 设置高亮索引
+ */
+const handleHighlight = (index) => {
+  highlightIndex.value = index
 }
 </script>
 
@@ -132,19 +232,6 @@ body,
   flex-direction: column;
 }
 
-.app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.app-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
-}
-
 .app-container {
   flex: 1;
   display: flex;
@@ -153,11 +240,30 @@ body,
   background-color: #f0f2f5;
 }
 
-.upload-section {
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+/* 上传视图 - 全屏 */
+.upload-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
 }
 
+.upload-view :deep(.upload-area) {
+  width: 100%;
+  max-width: 800px;
+  padding: 0;
+}
+
+.upload-view :deep(.el-upload-dragger) {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 识别视图 - 左右布局 */
 .main-section {
   flex: 1;
   display: flex;
@@ -173,5 +279,65 @@ body,
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+}
+
+/* 确认对话框样式 */
+.confirm-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.preview-image-container {
+  width: 100%;
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-image-container img {
+  max-width: 100%;
+  max-height: 50vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.file-info {
+  padding: 10px 0;
+}
+
+.file-info p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #606266;
+}
+
+.file-info strong {
+  color: #303133;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 隐藏图片预览器的旋转按钮 */
+.el-image-viewer__btn .el-icon-refresh-left,
+.el-image-viewer__btn .el-icon-refresh-right,
+.el-image-viewer__actions__inner .is-first + .el-image-viewer__actions__divider,
+.el-image-viewer__actions__inner svg[class*="refresh"],
+.el-image-viewer__actions__inner i[class*="refresh"] {
+  display: none !important;
+}
+
+/* 通过 SVG 内容隐藏旋转按钮 */
+.el-image-viewer__actions__inner > *:nth-child(6),
+.el-image-viewer__actions__inner > *:nth-child(7) {
+  display: none !important;
 }
 </style>
