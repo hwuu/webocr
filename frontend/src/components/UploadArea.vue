@@ -7,6 +7,7 @@
       :on-change="handleFileChange"
       accept="image/jpeg,image/png,image/bmp"
       drag
+      style="flex: 1; display: flex; flex-direction: column;"
     >
       <div class="upload-content">
         <el-icon class="upload-icon"><Upload /></el-icon>
@@ -81,12 +82,26 @@ onUnmounted(() => {
 
 <style scoped>
 .upload-area {
+  flex: 1;
   width: 100%;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.upload-area :deep(.el-upload) {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.upload-area :deep(.el-upload .el-upload-dragger) {
+  flex: 1;
 }
 
 .upload-content {
-  padding: 40px;
   text-align: center;
 }
 
@@ -119,9 +134,14 @@ onUnmounted(() => {
 }
 
 :deep(.el-upload-dragger) {
+  flex: 1;
+  width: 100%;
   border: 2px dashed #d9d9d9;
   border-radius: 6px;
   transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 :deep(.el-upload-dragger:hover) {

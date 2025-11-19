@@ -32,6 +32,15 @@
       </div>
     </div>
 
+    <!-- Footer -->
+    <div class="app-footer">
+      <div class="footer-content">
+        <span>Web OCR v1.0.0</span>
+        <span class="separator">|</span>
+        <a href="https://github.com/hwuu/webocr" target="_blank" rel="noopener noreferrer">项目主页</a>
+      </div>
+    </div>
+
     <!-- 确认对话框 -->
     <el-dialog
       v-model="showConfirmDialog"
@@ -244,23 +253,11 @@ body,
 .upload-view {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
+  flex-direction: column;
 }
 
 .upload-view :deep(.upload-area) {
-  width: 100%;
-  max-width: 800px;
-  padding: 0;
-}
-
-.upload-view :deep(.el-upload-dragger) {
-  width: 100%;
-  height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex: 1;
 }
 
 /* 识别视图 - 左右布局 */
@@ -274,11 +271,50 @@ body,
 
 .left-panel,
 .right-panel {
-  flex: 1;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+}
+
+.left-panel {
+  flex: 2;
+}
+
+.right-panel {
+  flex: 1;
+}
+
+/* Footer 样式 */
+.app-footer {
+  flex-shrink: 0;
+  padding: 8px 20px;
+  background-color: #f0f2f5;
+  border-top: 1px solid #e4e7ed;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.footer-content .separator {
+  color: #dcdfe6;
+}
+
+.footer-content a {
+  color: #409eff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-content a:hover {
+  color: #66b1ff;
+  text-decoration: underline;
 }
 
 /* 确认对话框样式 */

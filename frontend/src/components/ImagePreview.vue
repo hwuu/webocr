@@ -2,7 +2,10 @@
   <div class="image-preview">
     <div v-if="imageUrl" class="preview-container">
       <div class="preview-header">
-        <span class="title">图片预览</span>
+        <div class="header-left">
+          <span class="title">图片预览</span>
+          <span class="file-info">{{ fileName }} ({{ fileSize }})</span>
+        </div>
       </div>
       <div class="preview-content" ref="contentRef">
         <div class="image-wrapper" ref="wrapperRef">
@@ -16,16 +19,6 @@
             @load="handleImageLoad"
           />
           <canvas ref="canvasRef" class="box-canvas"></canvas>
-        </div>
-      </div>
-      <div class="preview-info">
-        <div class="info-item">
-          <span class="label">文件名：</span>
-          <span class="value">{{ fileName }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">大小：</span>
-          <span class="value">{{ fileSize }}</span>
         </div>
       </div>
     </div>
@@ -200,14 +193,32 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  height: 56px;
+  padding: 0 20px;
   border-bottom: 1px solid #e4e7ed;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
 .preview-header .title {
   font-size: 16px;
   font-weight: 500;
   color: #303133;
+  flex-shrink: 0;
+}
+
+.file-info {
+  font-size: 14px;
+  color: #909399;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .preview-content {
@@ -216,18 +227,24 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  overflow: auto;
+  overflow: hidden;
   background-color: #f5f7fa;
 }
 
 .image-wrapper {
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .preview-image {
   max-width: 100%;
   max-height: 100%;
+  width: auto;
+  height: auto;
   border-radius: 4px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   cursor: pointer;
@@ -235,38 +252,16 @@ onUnmounted(() => {
 
 .preview-image :deep(img) {
   display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 100px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .box-canvas {
   position: absolute;
   pointer-events: none;
-}
-
-.preview-info {
-  padding: 16px 20px;
-  border-top: 1px solid #e4e7ed;
-  background-color: #fff;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.info-item:last-child {
-  margin-bottom: 0;
-}
-
-.info-item .label {
-  color: #909399;
-  min-width: 60px;
-}
-
-.info-item .value {
-  color: #606266;
-  word-break: break-all;
 }
 
 .empty-preview {

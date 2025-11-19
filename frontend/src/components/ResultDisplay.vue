@@ -190,7 +190,8 @@ const handleCellLeave = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  height: 56px;
+  padding: 0 20px;
   border-bottom: 1px solid #e4e7ed;
 }
 
