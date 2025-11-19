@@ -37,6 +37,8 @@
       <div class="footer-content">
         <span>Web OCR v1.0.0</span>
         <span class="separator">|</span>
+        <a href="https://github.com/hwuu/webocr/blob/main/docs/user_manual.md" target="_blank" rel="noopener noreferrer">使用指南</a>
+        <span class="separator">|</span>
         <a href="https://github.com/hwuu/webocr" target="_blank" rel="noopener noreferrer">项目主页</a>
       </div>
     </div>
