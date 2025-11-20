@@ -32,7 +32,7 @@
               :data="result.detailed"
               stripe
               style="width: 100%"
-              max-height="500"
+              height="100%"
               @cell-mouse-enter="handleCellHover"
               @cell-mouse-leave="handleCellLeave"
             >
@@ -289,7 +289,11 @@ const handleCellLeave = () => {
 }
 
 .detailed-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 16px 0;
+  overflow: hidden;
 }
 
 .loading-container {
