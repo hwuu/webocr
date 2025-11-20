@@ -60,17 +60,11 @@ RUN apt-get update -o Acquire::http::Timeout=30 -o Acquire::Retries=3 \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制前端构建产物到 static 目录
-COPY --from=frontend-builder /frontend/dist ./static
-
 # 先单独复制 requirements.txt（优化缓存：只要依赖不变就能复用）
 COPY backend/requirements.txt ./
 
 # 安装 Python 依赖（使用阿里云 PyPI 镜像）
 RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt
-
-# 再复制其他后端代码（这样修改代码不会导致重新 pip install）
-COPY backend/ ./
 
 # 设置 PaddlePaddle 环境变量（禁用 MKL-DNN，提高 CPU 兼容性）
 ENV FLAGS_use_mkldnn=false
@@ -93,6 +87,12 @@ RUN mkdir -p /root/.paddleocr/whl/det/ch \
     && wget -q https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar \
     && tar -xf ch_ppocr_mobile_v2.0_cls_infer.tar \
     && rm ch_ppocr_mobile_v2.0_cls_infer.tar
+
+# 复制后端代码（修改后端代码不会触发 pip install 和模型下载）
+COPY backend/ ./
+
+# 最后复制前端构建产物（修改前端代码不会触发任何重量级操作）
+COPY --from=frontend-builder /frontend/dist ./static
 
 # 暴露端口
 EXPOSE 5000
