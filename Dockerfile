@@ -5,11 +5,14 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /frontend
 
+# 替换 Alpine 源为阿里云镜像（加速国内构建）
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+
 # 复制前端依赖配置
 COPY frontend/package*.json ./
 
-# 安装依赖
-RUN npm install
+# 安装依赖（使用淘宝 npm 镜像）
+RUN npm install --registry=https://registry.npmmirror.com
 
 # 复制前端源代码
 COPY frontend/ ./
@@ -25,8 +28,16 @@ FROM python:3.10-slim
 # 设置工作目录
 WORKDIR /app
 
+# 替换 Debian 源为阿里云镜像（加速国内构建）
+# python:3.10-slim 基于 Debian 12 (bookworm)
+RUN echo "deb http://mirrors.aliyun.com/debian/ bookworm main non-free-firmware contrib" > /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian-security/ bookworm-security main" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-updates main non-free-firmware contrib" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-backports main non-free-firmware contrib" >> /etc/apt/sources.list
+
 # 安装系统依赖（PaddleOCR 需要）
-RUN apt-get update && apt-get install -y \
+RUN apt-get update -o Acquire::http::Timeout=30 -o Acquire::Retries=3 \
+    && apt-get install -y --no-install-recommends \
     libgomp1 \
     libglib2.0-0 \
     libsm6 \
@@ -42,8 +53,8 @@ COPY --from=frontend-builder /frontend/dist ./static
 # 复制后端代码
 COPY backend/ ./
 
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
+# 安装 Python 依赖（使用阿里云 PyPI 镜像）
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt
 
 # 设置 PaddlePaddle 环境变量（禁用 MKL-DNN，提高 CPU 兼容性）
 ENV FLAGS_use_mkldnn=false
