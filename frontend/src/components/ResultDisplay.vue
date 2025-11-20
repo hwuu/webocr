@@ -32,7 +32,6 @@
               <el-table
                 :data="result.detailed"
                 stripe
-                max-height="100%"
                 style="width: 100%"
                 @cell-mouse-enter="handleCellHover"
                 @cell-mouse-leave="handleCellLeave"
