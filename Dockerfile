@@ -28,9 +28,15 @@ FROM python:3.10-slim
 # 设置工作目录
 WORKDIR /app
 
-# 安装 GPG 密钥和证书工具
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+# 替换为阿里云 Debian 源（解决官方源超时问题）
+RUN echo "deb http://mirrors.aliyun.com/debian/ bookworm main non-free-firmware contrib" > /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian-security/ bookworm-security main" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-updates main non-free-firmware contrib" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-backports main non-free-firmware contrib" >> /etc/apt/sources.list
+
+# 安装 GPG 密钥和证书工具（临时禁用 GPG 验证以解决冷启动问题）
+RUN apt-get update -o Acquire::AllowInsecureRepositories=true \
+    && apt-get install -y --no-install-recommends --allow-unauthenticated \
     ca-certificates \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
@@ -42,13 +48,7 @@ RUN mkdir -p /etc/apt/keyrings \
     && gpg --keyserver keyserver.ubuntu.com --recv-keys F8D2585B8783D481 \
     && gpg --export 6ED0E7B82643E131 78DBA3BC47EF2265 F8D2585B8783D481 > /etc/apt/trusted.gpg.d/debian-archive.gpg
 
-# 替换为阿里云 Debian 源（已有 GPG 密钥，可正常验证）
-RUN echo "deb http://mirrors.aliyun.com/debian/ bookworm main non-free-firmware contrib" > /etc/apt/sources.list \
-    && echo "deb http://mirrors.aliyun.com/debian-security/ bookworm-security main" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-updates main non-free-firmware contrib" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-backports main non-free-firmware contrib" >> /etc/apt/sources.list
-
-# 安装系统依赖（PaddleOCR 需要）
+# 安装系统依赖（现在可以正常验证 GPG 签名了）
 RUN apt-get update -o Acquire::http::Timeout=30 -o Acquire::Retries=3 \
     && apt-get install -y --no-install-recommends \
     libgomp1 \
