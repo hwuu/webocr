@@ -129,9 +129,9 @@ const drawBoxes = () => {
 
     const isHighlight = index === props.highlightIndex
 
-    ctx.strokeStyle = isHighlight ? '#409eff' : '#67c23a'
-    ctx.lineWidth = isHighlight ? 3 : 2
-    ctx.fillStyle = isHighlight ? 'rgba(64, 158, 255, 0.1)' : 'rgba(103, 194, 58, 0.05)'
+    ctx.strokeStyle = isHighlight ? '#FFD700' : '#999999'
+    ctx.lineWidth = isHighlight ? 2 : 1
+    ctx.fillStyle = isHighlight ? 'rgba(255, 215, 0, 0.15)' : 'rgba(153, 153, 153, 0.05)'
 
     ctx.beginPath()
     // box 格式: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
@@ -143,8 +143,32 @@ const drawBoxes = () => {
     }
     ctx.closePath()
 
+    // 先绘制填充（无阴影）
     ctx.fill()
-    ctx.stroke()
+
+    // 高亮时绘制多层发光效果
+    if (isHighlight) {
+      // 第一层：外层强烈发光
+      ctx.shadowBlur = 40
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'
+      ctx.stroke()
+
+      // 第二层：中层发光
+      ctx.shadowBlur = 25
+      ctx.shadowColor = 'rgba(255, 215, 0, 1)'
+      ctx.stroke()
+
+      // 第三层：内层高亮
+      ctx.shadowBlur = 10
+      ctx.shadowColor = '#FFD700'
+      ctx.stroke()
+
+      // 重置阴影
+      ctx.shadowBlur = 0
+    } else {
+      // 非高亮直接绘制
+      ctx.stroke()
+    }
   })
 }
 

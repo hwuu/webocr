@@ -29,23 +29,31 @@
         <el-tab-pane label="完整结果" name="detailed">
           <div class="detailed-content">
             <div class="table-scroll-wrapper">
-              <el-table
-                :data="result.detailed"
-                stripe
-                style="width: 100%"
-                @cell-mouse-enter="handleCellHover"
-                @cell-mouse-leave="handleCellLeave"
-              >
-                <el-table-column type="index" label="序号" width="60" />
-                <el-table-column prop="text" label="文本内容" min-width="200" />
-                <el-table-column prop="confidence" label="置信度" width="100">
-                  <template #default="{ row }">
-                    <el-tag :type="getConfidenceType(row.confidence)">
-                      {{ (row.confidence * 100).toFixed(2) }}%
-                    </el-tag>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <table class="result-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px;">序号</th>
+                    <th>文本内容</th>
+                    <th style="width: 100px;">置信度</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(item, index) in result.detailed"
+                    :key="index"
+                    @mouseenter="handleRowHover(item, index)"
+                    @mouseleave="handleRowLeave"
+                  >
+                    <td style="width: 60px;">{{ index + 1 }}</td>
+                    <td>{{ item.text }}</td>
+                    <td style="width: 100px;">
+                      <span class="confidence-tag" :class="getConfidenceClass(item.confidence)">
+                        {{ (item.confidence * 100).toFixed(2) }}%
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </el-tab-pane>
@@ -148,26 +156,25 @@ const handleClear = async () => {
 }
 
 /**
- * 获取置信度标签类型
+ * 获取置信度 CSS 类
  */
-const getConfidenceType = (confidence) => {
-  if (confidence >= 0.9) return 'success'
-  if (confidence >= 0.7) return 'warning'
-  return 'danger'
+const getConfidenceClass = (confidence) => {
+  if (confidence >= 0.9) return 'tag-success'
+  if (confidence >= 0.7) return 'tag-warning'
+  return 'tag-danger'
 }
 
 /**
- * 单元格鼠标进入
+ * 行鼠标进入
  */
-const handleCellHover = (row) => {
-  const index = props.result.detailed.indexOf(row)
+const handleRowHover = (row, index) => {
   emit('highlight', index)
 }
 
 /**
- * 单元格鼠标离开
+ * 行鼠标离开
  */
-const handleCellLeave = () => {
+const handleRowLeave = () => {
   emit('highlight', -1)
 }
 </script>
@@ -277,7 +284,6 @@ const handleCellLeave = () => {
 
 .plain-text-content :deep(.el-textarea__inner) {
   height: 100%;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
   line-height: 1.6;
   resize: none !important;
@@ -310,12 +316,69 @@ const handleCellLeave = () => {
   flex-direction: column;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: auto;
   min-height: 0;
 }
 
-.table-scroll-wrapper :deep(.el-table) {
-  flex: 1;
+/* 原生表格样式 */
+.result-table {
+  width: 100%;
+  min-width: 400px;
+  border-collapse: collapse;
+}
+
+.result-table th,
+.result-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ebeef5;
+  font-size: 14px;
+}
+
+.result-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f5f7fa;
+  font-weight: 500;
+  color: #909399;
+  font-size: 14px;
+  z-index: 10;
+}
+
+.result-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.result-table tbody tr:hover {
+  background: #f5f7fa;
+  cursor: pointer;
+}
+
+/* 置信度标签样式 */
+.confidence-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-success {
+  background: #f0f9ff;
+  color: #67c23a;
+  border: 1px solid #c2e7b0;
+}
+
+.tag-warning {
+  background: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #f5dab1;
+}
+
+.tag-danger {
+  background: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #fbc4c4;
 }
 
 .loading-container {
