@@ -74,18 +74,19 @@ ENV FLAGS_use_mkldnn=false
 ENV CPU_NUM=1
 
 # 预下载 PaddleOCR 模型到镜像中（避免运行时联网下载）
-RUN mkdir -p /root/.paddleocr/whl/det/ch/ch_PP-OCRv4_det_infer \
-    && mkdir -p /root/.paddleocr/whl/rec/ch/ch_PP-OCRv4_rec_infer \
-    && mkdir -p /root/.paddleocr/whl/cls/ch_ppocr_mobile_v2.0_cls_infer \
-    && cd /root/.paddleocr/whl/det/ch/ch_PP-OCRv4_det_infer \
+# 模型下载到父级目录，解压后会自动创建正确的子目录
+RUN mkdir -p /root/.paddleocr/whl/det/ch \
+    && mkdir -p /root/.paddleocr/whl/rec/ch \
+    && mkdir -p /root/.paddleocr/whl/cls \
+    && cd /root/.paddleocr/whl/det/ch \
     && wget -q https://paddleocr.bj.bcebos.com/PP-OCRv4/chinese/ch_PP-OCRv4_det_infer.tar \
     && tar -xf ch_PP-OCRv4_det_infer.tar \
     && rm ch_PP-OCRv4_det_infer.tar \
-    && cd /root/.paddleocr/whl/rec/ch/ch_PP-OCRv4_rec_infer \
+    && cd /root/.paddleocr/whl/rec/ch \
     && wget -q https://paddleocr.bj.bcebos.com/PP-OCRv4/chinese/ch_PP-OCRv4_rec_infer.tar \
     && tar -xf ch_PP-OCRv4_rec_infer.tar \
     && rm ch_PP-OCRv4_rec_infer.tar \
-    && cd /root/.paddleocr/whl/cls/ch_ppocr_mobile_v2.0_cls_infer \
+    && cd /root/.paddleocr/whl/cls \
     && wget -q https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar \
     && tar -xf ch_ppocr_mobile_v2.0_cls_infer.tar \
     && rm ch_ppocr_mobile_v2.0_cls_infer.tar
