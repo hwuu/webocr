@@ -32,7 +32,6 @@
               :data="result.detailed"
               stripe
               style="width: 100%"
-              height="100%"
               @cell-mouse-enter="handleCellHover"
               @cell-mouse-leave="handleCellLeave"
             >
@@ -293,7 +292,7 @@ const handleCellLeave = () => {
   display: flex;
   flex-direction: column;
   padding: 16px 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .loading-container {
