@@ -28,23 +28,26 @@
         <!-- 完整结果页签 -->
         <el-tab-pane label="完整结果" name="detailed">
           <div class="detailed-content">
-            <el-table
-              :data="result.detailed"
-              stripe
-              style="width: 100%"
-              @cell-mouse-enter="handleCellHover"
-              @cell-mouse-leave="handleCellLeave"
-            >
-              <el-table-column type="index" label="序号" width="60" />
-              <el-table-column prop="text" label="文本内容" min-width="200" />
-              <el-table-column prop="confidence" label="置信度" width="100">
-                <template #default="{ row }">
-                  <el-tag :type="getConfidenceType(row.confidence)">
-                    {{ (row.confidence * 100).toFixed(2) }}%
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div class="table-scroll-wrapper">
+              <el-table
+                :data="result.detailed"
+                stripe
+                max-height="100%"
+                style="width: 100%"
+                @cell-mouse-enter="handleCellHover"
+                @cell-mouse-leave="handleCellLeave"
+              >
+                <el-table-column type="index" label="序号" width="60" />
+                <el-table-column prop="text" label="文本内容" min-width="200" />
+                <el-table-column prop="confidence" label="置信度" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="getConfidenceType(row.confidence)">
+                      {{ (row.confidence * 100).toFixed(2) }}%
+                    </el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -176,6 +179,7 @@ const handleCellLeave = () => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .result-container {
@@ -183,6 +187,7 @@ const handleCellLeave = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 .result-header {
@@ -198,6 +203,7 @@ const handleCellLeave = () => {
   font-size: 16px;
   font-weight: 500;
   color: #303133;
+  flex-shrink: 0;
 }
 
 .button-group {
@@ -235,6 +241,7 @@ const handleCellLeave = () => {
   display: flex;
   flex-direction: column;
   padding: 0 20px;
+  min-height: 0;
 }
 
 :deep(.el-tabs__content) {
@@ -242,12 +249,14 @@ const handleCellLeave = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 :deep(.el-tab-pane) {
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .plain-text-content {
@@ -292,7 +301,22 @@ const handleCellLeave = () => {
   display: flex;
   flex-direction: column;
   padding: 16px 0;
-  overflow-y: auto;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.table-scroll-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.table-scroll-wrapper :deep(.el-table) {
+  flex: 1;
 }
 
 .loading-container {
