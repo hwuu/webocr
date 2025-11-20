@@ -1,0 +1,55 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE & Editors
+.vscode
+.idea
+.claude
+*.swp
+*.swo
+*~
+
+# Documentation
+docs
+README.md
+CLAUDE.md
+LICENSE
+
+# Logs
+backend/logs
+*.log
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+env
+ENV
+
+# Node.js
+node_modules
+frontend/node_modules
+frontend/dist
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp

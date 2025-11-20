@@ -12,7 +12,9 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from PIL import Image
 from ocr_service import get_ocr_service
 
-app = Flask(__name__)
+app = Flask(__name__,
+            static_folder='static',  # 前端构建产物目录
+            static_url_path='')      # 静态文件 URL 前缀为空
 
 # 配置 Flask
 app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
@@ -70,6 +72,14 @@ def validate_image(image_bytes: bytes) -> None:
         if isinstance(e, ValueError):
             raise
         raise ValueError(f"无效的图片文件: {str(e)}")
+
+
+@app.route('/')
+def index():
+    """
+    前端页面入口（服务静态文件）
+    """
+    return app.send_static_file('index.html')
 
 
 @app.route('/health', methods=['GET'])
@@ -166,4 +176,4 @@ if __name__ == '__main__':
     logger.info("Starting Web OCR service...")
     logger.info(f"Max workers: {config.MAX_WORKERS}")
     logger.info(f"Max file size: {config.MAX_FILE_SIZE / 1024 / 1024}MB")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
