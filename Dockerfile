@@ -28,15 +28,14 @@ FROM python:3.10-slim
 # 设置工作目录
 WORKDIR /app
 
-# 替换 Debian 源为阿里云镜像（加速国内构建）
-# python:3.10-slim 基于 Debian 12 (bookworm)
-RUN echo "deb http://mirrors.aliyun.com/debian/ bookworm main non-free-firmware contrib" > /etc/apt/sources.list \
-    && echo "deb http://mirrors.aliyun.com/debian-security/ bookworm-security main" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-updates main non-free-firmware contrib" >> /etc/apt/sources.list \
-    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-backports main non-free-firmware contrib" >> /etc/apt/sources.list
-
 # 安装系统依赖（PaddleOCR 需要）
-RUN apt-get update -o Acquire::http::Timeout=30 -o Acquire::Retries=3 \
+# 使用官方源 + 超时重试参数（避免国内镜像 GPG 密钥问题）
+RUN apt-get update \
+    -o Acquire::http::Timeout=60 \
+    -o Acquire::https::Timeout=60 \
+    -o Acquire::ftp::Timeout=60 \
+    -o Acquire::Retries=5 \
+    -o Acquire::Check-Valid-Until=false \
     && apt-get install -y --no-install-recommends \
     libgomp1 \
     libglib2.0-0 \
