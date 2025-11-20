@@ -28,14 +28,28 @@ FROM python:3.10-slim
 # 设置工作目录
 WORKDIR /app
 
-# 安装系统依赖（PaddleOCR 需要）
-# 使用官方源 + 超时重试参数（避免国内镜像 GPG 密钥问题）
+# 安装 GPG 密钥和证书工具
 RUN apt-get update \
-    -o Acquire::http::Timeout=60 \
-    -o Acquire::https::Timeout=60 \
-    -o Acquire::ftp::Timeout=60 \
-    -o Acquire::Retries=5 \
-    -o Acquire::Check-Valid-Until=false \
+    && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# 导入 Debian 官方 GPG 密钥
+RUN mkdir -p /etc/apt/keyrings \
+    && gpg --keyserver keyserver.ubuntu.com --recv-keys 6ED0E7B82643E131 \
+    && gpg --keyserver keyserver.ubuntu.com --recv-keys 78DBA3BC47EF2265 \
+    && gpg --keyserver keyserver.ubuntu.com --recv-keys F8D2585B8783D481 \
+    && gpg --export 6ED0E7B82643E131 78DBA3BC47EF2265 F8D2585B8783D481 > /etc/apt/trusted.gpg.d/debian-archive.gpg
+
+# 替换为阿里云 Debian 源（已有 GPG 密钥，可正常验证）
+RUN echo "deb http://mirrors.aliyun.com/debian/ bookworm main non-free-firmware contrib" > /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian-security/ bookworm-security main" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-updates main non-free-firmware contrib" >> /etc/apt/sources.list \
+    && echo "deb http://mirrors.aliyun.com/debian/ bookworm-backports main non-free-firmware contrib" >> /etc/apt/sources.list
+
+# 安装系统依赖（PaddleOCR 需要）
+RUN apt-get update -o Acquire::http::Timeout=30 -o Acquire::Retries=3 \
     && apt-get install -y --no-install-recommends \
     libgomp1 \
     libglib2.0-0 \
