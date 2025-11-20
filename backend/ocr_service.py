@@ -24,15 +24,40 @@ class OCRService:
         logger.info("Initializing PaddleOCR...")
         try:
             self.ocr = PaddleOCR(
-                use_angle_cls=True,  # 启用角度分类器
-                lang='ch',            # 中文模型
+                use_angle_cls=True,  # 启用角度分类器（处理旋转图片）
+                lang='ch',            # 中文模型（包含中英文混合识别）
                 use_gpu=False,        # 使用 CPU
-                show_log=False        # 不显示详细日志
+                show_log=False,       # 不显示详细日志
+                # 检测参数优化（适合日志/屏幕截图场景）
+                det_db_thresh=0.3,    # 降低检测阈值，提高小字体识别率（默认 0.3）
+                det_db_box_thresh=0.5 # 文本框置信度阈值（默认 0.6，降低以识别更多文本）
             )
-            logger.info("PaddleOCR initialized successfully")
+            logger.info("PaddleOCR initialized successfully (optimized for log/screenshot recognition)")
         except Exception as e:
             logger.error(f"Failed to initialize PaddleOCR: {e}")
             raise
+
+    def _sort_text_by_position(self, ocr_result: list) -> list:
+        """
+        按照从上到下、从左到右的顺序排序文本
+
+        Args:
+            ocr_result: PaddleOCR 原始结果
+
+        Returns:
+            排序后的结果
+        """
+        def get_box_top_left(line):
+            """获取文本框左上角坐标（用于排序）"""
+            box = line[0]
+            # box 格式: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+            # 取所有 Y 坐标的最小值（顶部）和所有 X 坐标的最小值（左侧）
+            y_min = min(point[1] for point in box)
+            x_min = min(point[0] for point in box)
+            return (y_min, x_min)
+
+        # 按照 (y, x) 排序：先按 Y 轴（从上到下），再按 X 轴（从左到右）
+        return sorted(ocr_result, key=get_box_top_left)
 
     def recognize(self, image_bytes: bytes) -> dict:
         """
@@ -78,8 +103,11 @@ class OCRService:
                     "detailed": []
                 }
 
+            # 按照从上到下、从左到右的顺序排序（日志场景需要正确的阅读顺序）
+            sorted_result = self._sort_text_by_position(result[0])
+
             # 提取纯文本（按行拼接）
-            plain_text = "\n".join([line[1][0] for line in result[0]])
+            plain_text = "\n".join([line[1][0] for line in sorted_result])
 
             # 提取详细结果
             detailed = [
@@ -88,7 +116,7 @@ class OCRService:
                     "confidence": round(line[1][1], 4),
                     "box": line[0]
                 }
-                for line in result[0]
+                for line in sorted_result
             ]
 
             elapsed = time.time() - start_time
