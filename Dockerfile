@@ -99,7 +99,7 @@ EXPOSE 5000
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000/health', timeout=5)"
+    CMD wget -q --spider http://localhost:5000/health || exit 1
 
 # 启动应用
 CMD ["python", "app.py"]
